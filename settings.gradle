@@ -1,0 +1,4 @@
+rootProject.name = "BullyShark"
+include ':app'
+include ':hiddenapistubs'
+include ':hiddenapistubs2'

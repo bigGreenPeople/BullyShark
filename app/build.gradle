@@ -1,0 +1,89 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    compileSdkVersion 30
+    buildToolsVersion "30.0.3"
+
+    defaultConfig {
+        applicationId "com.shark.bullyshark"
+        minSdkVersion 19
+        targetSdkVersion 30
+        versionCode 1
+        versionName "1.0"
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+}
+
+dependencies {
+
+    implementation 'androidx.appcompat:appcompat:1.2.0'
+    implementation 'com.google.android.material:material:1.2.1'
+    implementation 'androidx.constraintlayout:constraintlayout:2.0.1'
+    testImplementation 'junit:junit:4.+'
+    androidTestImplementation 'androidx.test.ext:junit:1.1.2'
+    androidTestImplementation 'androidx.test.espresso:espresso-core:3.3.0'
+    implementation 'com.swift.sandhook:hooklib:4.2.1'
+    implementation 'com.swift.sandhook:xposedcompat:4.2.+'
+    compileOnly project(":hiddenapistubs2")
+}
+
+ext {
+    //push的路径
+    pushPath = "/system/framework/BullyShark.jar"
+}
+
+//打开权限修改/system
+task systemChmod(dependsOn: 'assembleDebug') {
+    group 'Online-Device'
+    description 'Debug with online device without remote server'
+
+    doLast {
+        //push到手机上
+        def info = "adb root".execute().text
+        println "adb root:$info"
+
+        info = "adb disable-verity".execute().text
+        println "adb disable-verity:$info"
+
+        info = "adb remount".execute().text
+        println "adb remount:$info"
+
+        info = "adb shell mount -o rw,remount /".execute().text
+        println "mount:$info"
+    }
+}
+
+//将相关文件push到手机
+task pushDevice(dependsOn: 'systemChmod') {
+    group 'Online-Device'
+    description 'Debug with online device without remote server'
+
+    doLast {
+        //push到手机上
+        def info = "adb push ${new File(project.buildDir, "/intermediates/dex/debug/mergeDexDebug/classes.dex").canonicalPath} $pushPath".execute().text
+        println "Push dex:$info"
+    }
+}
+
+//重启手机
+task rebootDevice(dependsOn: pushDevice) {
+    group 'Online-Device'
+    doLast {
+        def info = "adb reboot".execute().text
+        println "REBOOT SUCCESS"
+    }
+}
